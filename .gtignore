@@ -1,0 +1,16 @@
+# Next.js project
+youtube-dashboard/node_modules
+youtube-dashboard/.next
+youtube-dashboard/.env
+youtube-dashboard/.env.local
+
+# env files
+.env
+.env.local
+
+# vercel
+youtube-dashboard/.vercel
+
+# debug
+npm-debug.log*
+yarn-debug.log*
