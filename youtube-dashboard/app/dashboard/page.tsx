@@ -1,35 +1,84 @@
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import Image from "next/image";
-import {ChannelStats} from "@/types/youtube";
-import{
+import { prisma } from "@/lib/prisma";
+import { getValidAccessToken, TokenRefreshError } from "@/lib/token";
+import { getChannelStats } from "@/lib/youtube";
+import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 
-async function getChannelStats(): Promise<ChannelStats> {
-  const response = await fetch("http://localhost:3000/api/channel",{
-    cache: "no-store",
-  });
-  if (!response.ok){
-    throw new Error("Failed to fetch channel stats");
-  }
-  return response.json();
-}
-
 export default async function DashboardPage() {
-  const stats= await getChannelStats();
+  const session = await auth();
 
-  return (<main className="p-8">
-      <h1 className="text-2xl font-bold mb-6">My Channel Dashboard</h1>
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
 
+  // Check if user has a connected channel
+  const channel = await prisma.channel.findFirst({
+    where: { userId: session.user.id },
+  });
+
+  if (!channel) {
+    redirect("/connect-channel");
+  }
+
+  // Get valid token — redirect to reconnect if refresh fails
+  let accessToken: string;
+  try {
+    accessToken = await getValidAccessToken(session.user.id);
+  } catch (error) {
+    if (error instanceof TokenRefreshError) {
+      redirect("/reconnect");
+    }
+    throw error;
+  }
+
+  // Fetch stats — redirect to reconnect if YouTube rejects the token
+  let stats;
+  try {
+    stats = await getChannelStats(accessToken);
+  } catch {
+    redirect("/reconnect");
+  }
+
+  return (
+    <main className="p-8">
+
+      {/* User info */}
+      <div className="flex items-center gap-3 mb-8">
+        {session.user?.image && (
+          <Image
+            src={session.user.image}
+            alt="Profile photo"
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
+        )}
+        <div>
+          <p className="font-semibold">{session.user?.name}</p>
+          <p className="text-sm text-gray-500">{session.user?.email}</p>
+        </div>
+      </div>
+
+      {/* Channel name */}
+      <h1 className="text-2xl font-bold mb-6">{stats.title}</h1>
+
+      {/* Stats cards */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Subscribers</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{stats.subscriberCount}</p>
+            <p className="text-3xl font-bold">
+              {Number(stats.subscriberCount).toLocaleString()}
+            </p>
           </CardContent>
         </Card>
 
@@ -38,7 +87,9 @@ export default async function DashboardPage() {
             <CardTitle>Total Views</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{stats.totalViews}</p>
+            <p className="text-3xl font-bold">
+              {Number(stats.totalViews).toLocaleString()}
+            </p>
           </CardContent>
         </Card>
 
@@ -47,10 +98,13 @@ export default async function DashboardPage() {
             <CardTitle>Total Videos</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{stats.totalVideos}</p>
+            <p className="text-3xl font-bold">
+              {Number(stats.totalVideos).toLocaleString()}
+            </p>
           </CardContent>
         </Card>
       </div>
+
     </main>
   );
 }
