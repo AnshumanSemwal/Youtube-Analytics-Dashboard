@@ -41,8 +41,9 @@ export default async function DashboardPage() {
   // Fetch stats — redirect to reconnect if YouTube rejects the token
   let stats;
   try {
-    stats = await getChannelStats(accessToken);
-  } catch {
+    stats = await getChannelStats(accessToken, session.user.id);
+  } catch(error) {
+    console.error("getChannelStats failed:", error);
     redirect("/reconnect");
   }
 

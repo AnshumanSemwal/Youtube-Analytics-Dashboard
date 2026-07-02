@@ -1,10 +1,8 @@
 import { google } from "googleapis";
 import { z } from "zod";
+import { withCache } from "@/lib/cache";
 
 // ─── Zod Schemas ──────────────────────────────────────────────────────────
-// These validate the shape of YouTube API responses at runtime.
-// If YouTube changes their API, Zod catches it immediately.
-
 const ChannelStatsSchema = z.object({
   id: z.string(),
   snippet: z.object({
@@ -38,13 +36,14 @@ const VideoItemSchema = z.object({
 });
 
 const AnalyticsRowSchema = z.tuple([
-  z.string(),  // date
-  z.number(),  // views
-  z.number(),  // watchTime
-  z.number(),  // impressions
-  z.number(),  // ctr
+  z.string(),
+  z.number(),
+  z.number(),
+  z.number(),
+  z.number(),
 ]);
-// ─── Build an authenticated Google API client ─────────────────────────────
+
+// ─── Auth clients ─────────────────────────────────────────────────────────
 export function getYouTubeClient(accessToken: string) {
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
@@ -57,105 +56,126 @@ export function getYouTubeAnalyticsClient(accessToken: string) {
   return google.youtubeAnalytics({ version: "v2", auth });
 }
 
-// ─── Channel Stats ────────────────────────────────────────────────────────
-export async function getChannelStats(accessToken: string) {
+// ─── Channel Stats — cached 2 hours ──────────────────────────────────────
+export async function getChannelStats(accessToken: string, userId: string) {
+  return withCache(
+    `channel-stats:${userId}`,
+    60 * 60 * 2, // 2 hours
+    async () => {
+      const youtube = getYouTubeClient(accessToken);
+      const response = await youtube.channels.list({
+        part: ["statistics", "snippet"],
+        mine: true,
+      });
 
-    const youtube = getYouTubeClient(accessToken);
+      const raw = response.data.items?.[0];
+      if (!raw) throw new Error("No YouTube channel found.");
 
-  const response = await youtube.channels.list({
-    part: ["statistics", "snippet"],
-    mine: true,
-  });
+      const channel = ChannelStatsSchema.parse(raw);
 
-  const raw = response.data.items?.[0];
-  if (!raw) throw new Error("No YouTube channel found for this account.");
-
-  const channel = ChannelStatsSchema.parse(raw);
-
-  return {
-    channelId:       channel.id,
-    title:           channel.snippet.title,
-    thumbnailUrl:    channel.snippet.thumbnails?.default?.url || null,
-    handle:          channel.snippet.customUrl || null,
-    subscriberCount: channel.statistics.subscriberCount || "0",
-    totalViews:      channel.statistics.viewCount || "0",
-    totalVideos:     channel.statistics.videoCount || "0",
-  };
+      return {
+        channelId:       channel.id,
+        title:           channel.snippet.title,
+        thumbnailUrl:    channel.snippet.thumbnails?.default?.url || null,
+        handle:          channel.snippet.customUrl || null,
+        subscriberCount: channel.statistics.subscriberCount || "0",
+        totalViews:      channel.statistics.viewCount || "0",
+        totalVideos:     channel.statistics.videoCount || "0",
+      };
+    }
+  );
 }
 
-// ─── Video List ───────────────────────────────────────────────────────────
-export async function getVideoList(accessToken: string, channelId: string) {
-  const youtube = getYouTubeClient(accessToken);
+// ─── Video List — cached 6 hours ─────────────────────────────────────────
+export async function getVideoList(
+  accessToken: string,
+  channelId: string,
+  userId: string
+) {
+  return withCache(
+    `video-list:${userId}`,
+    60 * 60 * 6, // 6 hours
+    async () => {
+      const youtube = getYouTubeClient(accessToken);
 
-  const channelResponse = await youtube.channels.list({
-    part: ["contentDetails"],
-    id: [channelId],
-  });
+      const channelResponse = await youtube.channels.list({
+        part: ["contentDetails"],
+        id: [channelId],
+      });
 
-  const uploadsPlaylistId =
-    channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      const uploadsPlaylistId =
+        channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
 
-  if (!uploadsPlaylistId) throw new Error("Could not find uploads playlist.");
+      if (!uploadsPlaylistId) throw new Error("Could not find uploads playlist.");
 
-  const playlistResponse = await youtube.playlistItems.list({
-    part: ["contentDetails"],
-    playlistId: uploadsPlaylistId,
-    maxResults: 30,
-  });
+      const playlistResponse = await youtube.playlistItems.list({
+        part: ["contentDetails"],
+        playlistId: uploadsPlaylistId,
+        maxResults: 30,
+      });
 
-  const videoIds = playlistResponse.data.items
-    ?.map((item) => item.contentDetails?.videoId!)
-    .filter(Boolean) || [];
+      const videoIds = playlistResponse.data.items
+        ?.map((item) => item.contentDetails?.videoId!)
+        .filter(Boolean) || [];
 
-  if (videoIds.length === 0) return [];
+      if (videoIds.length === 0) return [];
 
-  const videosResponse = await youtube.videos.list({
-    part: ["snippet", "statistics"],
-    id: videoIds,
-  });
+      const videosResponse = await youtube.videos.list({
+        part: ["snippet", "statistics"],
+        id: videoIds,
+      });
 
-  return (videosResponse.data.items || []).map((video) => {
-    const validated = VideoItemSchema.parse(video);
-    return {
-      videoId:      validated.id,
-      title:        validated.snippet.title,
-      publishedAt:  validated.snippet.publishedAt,
-      thumbnailUrl: validated.snippet.thumbnails?.medium?.url || null,
-      views:        parseInt(validated.statistics?.viewCount || "0"),
-      likes:        parseInt(validated.statistics?.likeCount || "0"),
-      comments:     parseInt(validated.statistics?.commentCount || "0"),
-    };
-  });
+      return (videosResponse.data.items || []).map((video) => {
+        const validated = VideoItemSchema.parse(video);
+        return {
+          videoId:      validated.id,
+          title:        validated.snippet.title,
+          publishedAt:  validated.snippet.publishedAt,
+          thumbnailUrl: validated.snippet.thumbnails?.medium?.url || null,
+          views:        parseInt(validated.statistics?.viewCount || "0"),
+          likes:        parseInt(validated.statistics?.likeCount || "0"),
+          comments:     parseInt(validated.statistics?.commentCount || "0"),
+        };
+      });
+    }
+  );
 }
 
-// ─── Daily Analytics ─────────────────────────────────────────────────────
+// ─── Daily Analytics — cached 24 hours ───────────────────────────────────
 export async function getDailyAnalytics(
   accessToken: string,
   channelId: string,
+  userId: string,
   startDate: string,
   endDate: string
 ) {
-  const analyticsClient = getYouTubeAnalyticsClient(accessToken);
+  return withCache(
+    `daily-analytics:${userId}:${startDate}:${endDate}`,
+    60 * 60 * 24, // 24 hours
+    async () => {
+      const analyticsClient = getYouTubeAnalyticsClient(accessToken);
 
-  const response = await analyticsClient.reports.query({
-    ids: `channel==${channelId}`,
-    startDate,
-    endDate,
-    metrics: "views,estimatedMinutesWatched,impressions,impressionClickThroughRate",
-    dimensions: "day",
-    sort: "day",
-  });
+      const response = await analyticsClient.reports.query({
+        ids: `channel==${channelId}`,
+        startDate,
+        endDate,
+        metrics: "views,estimatedMinutesWatched,impressions,impressionClickThroughRate",
+        dimensions: "day",
+        sort: "day",
+      });
 
-  const rows = response.data.rows || [];
+      const rows = response.data.rows || [];
 
-  return rows.map((row) => {
-    const validated = AnalyticsRowSchema.parse(row);
-    return {
-      date:        validated[0],
-      views:       validated[1],
-      watchTime:   validated[2],
-      impressions: validated[3],
-      ctr:         validated[4],
-    };
-  });
+      return rows.map((row) => {
+        const validated = AnalyticsRowSchema.parse(row);
+        return {
+          date:        validated[0],
+          views:       validated[1],
+          watchTime:   validated[2],
+          impressions: validated[3],
+          ctr:         validated[4],
+        };
+      });
+    }
+  );
 }
