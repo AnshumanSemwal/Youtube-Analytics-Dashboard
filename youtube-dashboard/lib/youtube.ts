@@ -36,11 +36,9 @@ const VideoItemSchema = z.object({
 });
 
 const AnalyticsRowSchema = z.tuple([
-  z.string(),
-  z.number(),
-  z.number(),
-  z.number(),
-  z.number(),
+  z.string(),  // date
+  z.number(),  // views
+  z.number(),  // watchTime
 ]);
 
 // ─── Auth clients ─────────────────────────────────────────────────────────
@@ -151,7 +149,7 @@ export async function getDailyAnalytics(
 ) {
   return withCache(
     `daily-analytics:${userId}:${startDate}:${endDate}`,
-    60 * 60 * 24, // 24 hours
+    60 * 60 * 24,
     async () => {
       const analyticsClient = getYouTubeAnalyticsClient(accessToken);
 
@@ -159,7 +157,7 @@ export async function getDailyAnalytics(
         ids: `channel==${channelId}`,
         startDate,
         endDate,
-        metrics: "views,estimatedMinutesWatched,impressions,impressionClickThroughRate",
+        metrics: "views,estimatedMinutesWatched",
         dimensions: "day",
         sort: "day",
       });
@@ -172,8 +170,8 @@ export async function getDailyAnalytics(
           date:        validated[0],
           views:       validated[1],
           watchTime:   validated[2],
-          impressions: validated[3],
-          ctr:         validated[4],
+          impressions: 0,
+          ctr:         0,
         };
       });
     }

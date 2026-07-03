@@ -4,12 +4,14 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getValidAccessToken, TokenRefreshError } from "@/lib/token";
 import { getChannelStats } from "@/lib/youtube";
+import SyncButton from "@/components/SyncButton";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -105,6 +107,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+      <SyncButton />
 
     </main>
   );
