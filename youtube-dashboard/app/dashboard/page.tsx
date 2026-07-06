@@ -4,14 +4,9 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getValidAccessToken, TokenRefreshError } from "@/lib/token";
 import { getChannelStats } from "@/lib/youtube";
-import SyncButton from "@/components/SyncButton";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import RefreshButton from "@/components/RefreshButton";
+import LastSynced from "@/components/LastSynced";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -20,7 +15,6 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Check if user has a connected channel
   const channel = await prisma.channel.findFirst({
     where: { userId: session.user.id },
   });
@@ -29,7 +23,6 @@ export default async function DashboardPage() {
     redirect("/connect-channel");
   }
 
-  // Get valid token — redirect to reconnect if refresh fails
   let accessToken: string;
   try {
     accessToken = await getValidAccessToken(session.user.id);
@@ -40,12 +33,10 @@ export default async function DashboardPage() {
     throw error;
   }
 
-  // Fetch stats — redirect to reconnect if YouTube rejects the token
   let stats;
   try {
     stats = await getChannelStats(accessToken, session.user.id);
-  } catch(error) {
-    console.error("getChannelStats failed:", error);
+  } catch (error) {
     redirect("/reconnect");
   }
 
@@ -53,7 +44,7 @@ export default async function DashboardPage() {
     <main className="p-8">
 
       {/* User info */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-4">
         {session.user?.image && (
           <Image
             src={session.user.image}
@@ -69,45 +60,44 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Refresh controls */}
+      <div className="flex items-center gap-4 mb-6">
+        <RefreshButton />
+        <LastSynced lastSyncedAt={channel.lastSyncedAt} />
+      </div>
+
       {/* Channel name */}
-      <h1 className="text-2xl font-bold mb-6">{stats.title}</h1>
+      <h1 className="text-2xl font-bold mb-6">{stats?.title}</h1>
 
       {/* Stats cards */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Subscribers</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Subscribers</CardTitle></CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {Number(stats.subscriberCount).toLocaleString()}
+              {Number(stats?.subscriberCount).toLocaleString()}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Total Views</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Total Views</CardTitle></CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {Number(stats.totalViews).toLocaleString()}
+              {Number(stats?.totalViews).toLocaleString()}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Total Videos</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Total Videos</CardTitle></CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {Number(stats.totalVideos).toLocaleString()}
+              {Number(stats?.totalVideos).toLocaleString()}
             </p>
           </CardContent>
         </Card>
       </div>
-      <SyncButton />
 
     </main>
   );

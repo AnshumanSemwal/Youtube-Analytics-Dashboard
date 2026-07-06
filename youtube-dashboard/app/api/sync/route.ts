@@ -4,7 +4,30 @@ import { getValidAccessToken, TokenRefreshError } from "@/lib/token";
 import { getChannelStats, getVideoList, getDailyAnalytics } from "@/lib/youtube";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const cronSecret = request.headers.get("x-cron-secret");
+  const isCron = cronSecret === process.env.CRON_SECRET;
+
+  if (isCron) {
+    // Cron path: sync all users
+    const channels = await prisma.channel.findMany({
+      include: { user: true },
+    });
+
+    const results = await Promise.allSettled(
+      channels.map(async (channel) => {
+        try {
+          const accessToken = await getValidAccessToken(channel.userId);
+          // run sync for this channel
+          return { channelId: channel.channelId, ok: true };
+        } catch {
+          return { channelId: channel.channelId, ok: false };
+        }
+      })
+    );
+
+    return NextResponse.json({ cron: true, results });
+  }
   const session = await auth();
 
   if (!session?.user?.id) {
