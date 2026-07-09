@@ -1,104 +1,178 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getValidAccessToken, TokenRefreshError } from "@/lib/token";
 import { getChannelStats } from "@/lib/youtube";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardShell from "@/components/layout/DashboardShell";
+import StatCard from "@/components/dashboard/StatCard";
+import DateRangePicker from "@/components/dashboard/DateRangePicker";
+import ViewsChart from "@/components/dashboard/ViewsChart";
+import WatchTimeChart from "@/components/dashboard/WatchTimeChart";
+import TopVideosChart from "@/components/dashboard/TopVideosChart";
 import RefreshButton from "@/components/RefreshButton";
 import LastSynced from "@/components/LastSynced";
 
-export default async function DashboardPage() {
-  const session = await auth();
+function fmtDate(date: Date): string {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day:   "numeric",
+  });
+}
 
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ days?: string }>;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
   const channel = await prisma.channel.findFirst({
     where: { userId: session.user.id },
   });
-
-  if (!channel) {
-    redirect("/connect-channel");
-  }
+  if (!channel) redirect("/connect-channel");
 
   let accessToken: string;
   try {
     accessToken = await getValidAccessToken(session.user.id);
   } catch (error) {
-    if (error instanceof TokenRefreshError) {
-      redirect("/reconnect");
-    }
+    if (error instanceof TokenRefreshError) redirect("/reconnect");
     throw error;
   }
 
   let stats;
   try {
     stats = await getChannelStats(accessToken, session.user.id);
-  } catch (error) {
+  } catch {
     redirect("/reconnect");
   }
 
+  // ── Await searchParams ───────────────────────────────────────────────────
+  const { days: daysParam } = await searchParams;
+  const days = Math.min(Math.max(Number(daysParam ?? 28), 7), 90);
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  // ── Fetch DailyMetric from DB ────────────────────────────────────────────
+  const metrics = await prisma.dailyMetric.findMany({
+    where: {
+      channelId: channel.id,
+      date: { gte: startDate },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  // ── Fetch top 10 videos from DB ──────────────────────────────────────────
+  const videos = await prisma.videoSnapshot.findMany({
+    where:   { channelId: channel.id },
+    orderBy: { views: "desc" },
+    take:    10,
+  });
+
+  // ── Format data for charts ───────────────────────────────────────────────
+  const viewsData = metrics.map((m) => ({
+    date:  fmtDate(m.date),
+    views: m.views,
+  }));
+
+  const watchTimeData = metrics.map((m) => ({
+    date:      fmtDate(m.date),
+    watchTime: Math.round((m.watchTime / 60) * 10) / 10,
+  }));
+
+  const videoData = videos.map((v) => ({
+    title: v.title,
+    views: v.views,
+  }));
+
+  // ── Aggregate stats for cards ────────────────────────────────────────────
+  const totalViewsInRange = metrics.reduce((sum, m) => sum + m.views, 0);
+  const totalWatchTimeInRange = metrics.reduce((sum, m) => sum + m.watchTime, 0);
+  const watchTimeHours = Math.round(totalWatchTimeInRange / 60).toLocaleString();
+
+  // TODO (post-MVP): add subscribersGained to getDailyAnalytics so the
+  // Subscribers card shows range-specific growth instead of all-time total.
+  // Also add impressionClickThroughRate when channel qualifies for Partner Program.
+
   return (
-    <main className="p-8">
-
-      {/* User info */}
-      <div className="flex items-center gap-3 mb-4">
-        {session.user?.image && (
-          <Image
-            src={session.user.image}
-            alt="Profile photo"
-            width={40}
-            height={40}
-            className="rounded-full"
-          />
-        )}
-        <div>
-          <p className="font-semibold">{session.user?.name}</p>
-          <p className="text-sm text-gray-500">{session.user?.email}</p>
+    <DashboardShell
+      channelTitle={channel.title}
+      channelThumbnail={channel.thumbnailUrl}
+      userImage={session.user?.image ?? null}
+      userName={session.user?.name ?? null}
+    >
+      {/* Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <RefreshButton />
+          <LastSynced lastSyncedAt={channel.lastSyncedAt} />
         </div>
-      </div>
-
-      {/* Refresh controls */}
-      <div className="flex items-center gap-4 mb-6">
-        <RefreshButton />
-        <LastSynced lastSyncedAt={channel.lastSyncedAt} />
+        <DateRangePicker />
       </div>
 
       {/* Channel name */}
-      <h1 className="text-2xl font-bold mb-6">{stats?.title}</h1>
+      <h1 className="text-xl font-bold mb-5">{stats!.title}</h1>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardHeader><CardTitle>Subscribers</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {Number(stats?.subscriberCount).toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Total Views</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {Number(stats?.totalViews).toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Total Videos</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {Number(stats?.totalVideos).toLocaleString()}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          title="Views"
+          value={totalViewsInRange.toLocaleString()}
+          note={`Last ${days} days`}
+        />
+        <StatCard
+          title="Subscribers"
+          value={Number(stats!.subscriberCount).toLocaleString()}
+          note="All-time"
+        />
+        <StatCard
+          title="Watch Time"
+          value={`${watchTimeHours}h`}
+          note={`Last ${days} days`}
+        />
+        <StatCard
+          title="Total Videos"
+          value={Number(stats!.totalVideos).toLocaleString()}
+          note="All-time"
+        />
       </div>
 
-    </main>
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="border rounded-xl p-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">
+            Daily Views — Last {days} days
+          </h2>
+          <ViewsChart data={viewsData} />
+        </div>
+
+        <div className="border rounded-xl p-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">
+            Watch Time (hours) — Last {days} days
+          </h2>
+          <WatchTimeChart data={watchTimeData} />
+        </div>
+      </div>
+
+      {/* Top videos */}
+      <div className="border rounded-xl p-4 mb-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+          Top Videos by Views (all-time)
+        </h2>
+        <TopVideosChart data={videoData} />
+      </div>
+
+      {/* CTR placeholder */}
+      <div className="border rounded-xl p-4 bg-gray-50">
+        <h2 className="text-sm font-semibold text-gray-700 mb-1">
+          Click-Through Rate (CTR)
+        </h2>
+        <p className="text-sm text-gray-400">
+          CTR data is available after joining the YouTube Partner Program.
+          This card will populate automatically once your channel qualifies.
+        </p>
+      </div>
+
+    </DashboardShell>
   );
 }
