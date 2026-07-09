@@ -21,5 +21,9 @@ export default function LastSynced({ lastSyncedAt }: Props) {
     label = `Updated ${diffHrs}h ago`;
   }
 
-  return <span className="text-sm text-gray-400">{label}</span>;
+  return (
+    <span className="text-sm text-gray-400" suppressHydrationWarning>
+      {label}
+    </span>
+  );
 }

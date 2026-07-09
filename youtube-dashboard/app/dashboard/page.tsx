@@ -9,6 +9,7 @@ import DateRangePicker from "@/components/dashboard/DateRangePicker";
 import ViewsChart from "@/components/dashboard/ViewsChart";
 import WatchTimeChart from "@/components/dashboard/WatchTimeChart";
 import TopVideosChart from "@/components/dashboard/TopVideosChart";
+import VideoTable from "@/components/dashboard/VideoTable";
 import RefreshButton from "@/components/RefreshButton";
 import LastSynced from "@/components/LastSynced";
 
@@ -47,7 +48,7 @@ export default async function DashboardPage({
     redirect("/reconnect");
   }
 
-  // ── Await searchParams ───────────────────────────────────────────────────
+  // ── Date range ───────────────────────────────────────────────────────────
   const { days: daysParam } = await searchParams;
   const days = Math.min(Math.max(Number(daysParam ?? 28), 7), 90);
   const startDate = new Date();
@@ -62,11 +63,10 @@ export default async function DashboardPage({
     orderBy: { date: "asc" },
   });
 
-  // ── Fetch top 10 videos from DB ──────────────────────────────────────────
+  // ── Fetch all videos from DB ─────────────────────────────────────────────
   const videos = await prisma.videoSnapshot.findMany({
     where:   { channelId: channel.id },
     orderBy: { views: "desc" },
-    take:    10,
   });
 
   // ── Format data for charts ───────────────────────────────────────────────
@@ -80,19 +80,31 @@ export default async function DashboardPage({
     watchTime: Math.round((m.watchTime / 60) * 10) / 10,
   }));
 
-  const videoData = videos.map((v) => ({
+  // Top 10 for bar chart
+  const videoData = videos.slice(0, 10).map((v) => ({
     title: v.title,
     views: v.views,
   }));
 
+  // Serialize all videos for the table (dates must be strings for client components)
+  const serializedVideos = videos.map((v) => ({
+    id:          v.id,
+    videoId:     v.videoId,
+    title:       v.title,
+    views:       v.views,
+    likes:       v.likes,
+    comments:    v.comments,
+    publishedAt: v.publishedAt.toISOString(),
+  }));
+
   // ── Aggregate stats for cards ────────────────────────────────────────────
-  const totalViewsInRange = metrics.reduce((sum, m) => sum + m.views, 0);
+  const totalViewsInRange    = metrics.reduce((sum, m) => sum + m.views, 0);
   const totalWatchTimeInRange = metrics.reduce((sum, m) => sum + m.watchTime, 0);
-  const watchTimeHours = Math.round(totalWatchTimeInRange / 60).toLocaleString();
+  const watchTimeHours       = Math.round(totalWatchTimeInRange / 60).toLocaleString("en-US");
 
   // TODO (post-MVP): add subscribersGained to getDailyAnalytics so the
   // Subscribers card shows range-specific growth instead of all-time total.
-  // Also add impressionClickThroughRate when channel qualifies for Partner Program.
+  // Add impressionClickThroughRate when channel qualifies for Partner Program.
 
   return (
     <DashboardShell
@@ -117,12 +129,12 @@ export default async function DashboardPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Views"
-          value={totalViewsInRange.toLocaleString()}
+          value={totalViewsInRange.toLocaleString("en-US")}
           note={`Last ${days} days`}
         />
         <StatCard
           title="Subscribers"
-          value={Number(stats!.subscriberCount).toLocaleString()}
+          value={Number(stats!.subscriberCount).toLocaleString("en-US")}
           note="All-time"
         />
         <StatCard
@@ -132,7 +144,7 @@ export default async function DashboardPage({
         />
         <StatCard
           title="Total Videos"
-          value={Number(stats!.totalVideos).toLocaleString()}
+          value={Number(stats!.totalVideos).toLocaleString("en-US")}
           note="All-time"
         />
       </div>
@@ -154,7 +166,7 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      {/* Top videos */}
+      {/* Top videos bar chart */}
       <div className="border rounded-xl p-4 mb-6">
         <h2 className="text-sm font-semibold text-gray-700 mb-4">
           Top Videos by Views (all-time)
@@ -163,7 +175,7 @@ export default async function DashboardPage({
       </div>
 
       {/* CTR placeholder */}
-      <div className="border rounded-xl p-4 bg-gray-50">
+      <div className="border rounded-xl p-4 bg-gray-50 mb-6">
         <h2 className="text-sm font-semibold text-gray-700 mb-1">
           Click-Through Rate (CTR)
         </h2>
@@ -171,6 +183,16 @@ export default async function DashboardPage({
           CTR data is available after joining the YouTube Partner Program.
           This card will populate automatically once your channel qualifies.
         </p>
+      </div>
+
+      {/* Video table */}
+      <div className="border rounded-xl p-4">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+          All Videos
+        </h2>
+        {/* TODO (post-MVP): add per-video watch time and CTR columns
+            once YouTube Analytics per-video breakdown is implemented. */}
+        <VideoTable videos={serializedVideos} />
       </div>
 
     </DashboardShell>
