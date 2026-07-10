@@ -65,7 +65,7 @@ export default async function VideoPage({
       {/* Back */}
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black mb-6"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-black mb-6"
       >
         Back to dashboard
       </Link>
@@ -84,10 +84,10 @@ export default async function VideoPage({
 
         <div className="flex flex-col justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2 leading-snug">
+            <h1 className="text-xl font-bold text-foreground mb-2 leading-snug">
               {video.title}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Published{" "}
               {new Date(video.publishedAt).toLocaleDateString("en-US", {
                 month: "long",
@@ -123,7 +123,7 @@ export default async function VideoPage({
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Views
             </CardTitle>
           </CardHeader>
@@ -136,7 +136,7 @@ export default async function VideoPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Likes
             </CardTitle>
           </CardHeader>
@@ -149,7 +149,7 @@ export default async function VideoPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Comments
             </CardTitle>
           </CardHeader>
@@ -168,7 +168,7 @@ export default async function VideoPage({
         </h2>
         <div className="flex flex-wrap items-center gap-4">
           <div>
-            <p className="text-sm text-gray-500 mb-1">This video</p>
+            <p className="text-sm text-muted-foreground mb-1">This video</p>
             <p className="text-2xl font-bold">
               {video.views.toLocaleString("en-US")} views
             </p>
@@ -177,7 +177,7 @@ export default async function VideoPage({
           <div className="text-xl text-gray-300">vs</div>
 
           <div>
-            <p className="text-sm text-gray-500 mb-1">Channel average</p>
+            <p className="text-sm text-muted-foreground mb-1">Channel average</p>
             <p className="text-2xl font-bold">
               {avgViews.toLocaleString("en-US")} views
             </p>
@@ -194,7 +194,7 @@ export default async function VideoPage({
             {viewsDelta}%
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-3">
+        <p className="text-xs text-muted-foreground mt-3">
           Compared against {allVideos.length} videos in your channel.
         </p>
       </div>
@@ -204,7 +204,7 @@ export default async function VideoPage({
         <h2 className="text-sm font-semibold text-gray-700 mb-1">
           Views Over Time
         </h2>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Per-video daily analytics will be added post-MVP. This requires
           extending the sync pipeline to fetch video-level breakdowns from
           the YouTube Analytics API.
@@ -216,7 +216,7 @@ export default async function VideoPage({
         <h2 className="text-sm font-semibold text-gray-700 mb-1">
           Traffic Sources
         </h2>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Traffic source breakdown (Search, Browse, External, Suggested)
           will be added post-MVP.
         </p>

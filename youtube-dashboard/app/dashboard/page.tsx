@@ -148,52 +148,48 @@ export default async function DashboardPage({
           note="All-time"
         />
       </div>
+      {/* Views line chart */}
+    <div className="border rounded-xl p-4 dark:border-gray-800">
+      <h2 className="text-sm font-semibold text-foreground mb-4">
+        Daily Views — Last {days} days
+      </h2>
+      <ViewsChart data={viewsData} />
+    </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="border rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">
-            Daily Views — Last {days} days
-          </h2>
-          <ViewsChart data={viewsData} />
-        </div>
+    {/* Watch time area chart */}
+    <div className="border rounded-xl p-4 dark:border-gray-800">
+      <h2 className="text-sm font-semibold text-foreground mb-4">
+        Watch Time (hours) — Last {days} days
+      </h2>
+      <WatchTimeChart data={watchTimeData} />
+    </div>
 
-        <div className="border rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">
-            Watch Time (hours) — Last {days} days
-          </h2>
-          <WatchTimeChart data={watchTimeData} />
-        </div>
-      </div>
+    {/* Top videos bar chart */}
+    <div className="border rounded-xl p-4 mb-6 dark:border-gray-800">
+      <h2 className="text-sm font-semibold text-foreground mb-4">
+        Top Videos by Views (all-time)
+      </h2>
+      <TopVideosChart data={videoData} />
+    </div>
 
-      {/* Top videos bar chart */}
-      <div className="border rounded-xl p-4 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">
-          Top Videos by Views (all-time)
-        </h2>
-        <TopVideosChart data={videoData} />
-      </div>
+    {/* CTR placeholder */}
+    <div className="border rounded-xl p-4 bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
+      <h2 className="text-sm font-semibold text-foreground mb-1">
+        Click-Through Rate (CTR)
+      </h2>
+      <p className="text-sm text-muted-foreground">
+        CTR data is available after joining the YouTube Partner Program.
+        This card will populate automatically once your channel qualifies.
+      </p>
+    </div>
 
-      {/* CTR placeholder */}
-      <div className="border rounded-xl p-4 bg-gray-50 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-1">
-          Click-Through Rate (CTR)
-        </h2>
-        <p className="text-sm text-gray-400">
-          CTR data is available after joining the YouTube Partner Program.
-          This card will populate automatically once your channel qualifies.
-        </p>
-      </div>
-
-      {/* Video table */}
-      <div className="border rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">
-          All Videos
-        </h2>
-        {/* TODO (post-MVP): add per-video watch time and CTR columns
-            once YouTube Analytics per-video breakdown is implemented. */}
-        <VideoTable videos={serializedVideos} />
-      </div>
+    {/* Video table */}
+    <div className="border rounded-xl p-4 dark:border-gray-800">
+      <h2 className="text-sm font-semibold text-foreground mb-4">
+        All Videos
+      </h2>
+      <VideoTable videos={serializedVideos} />
+    </div>
 
     </DashboardShell>
   );

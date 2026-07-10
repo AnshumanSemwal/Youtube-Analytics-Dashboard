@@ -22,11 +22,11 @@ const PAGE_SIZE = 10;
 export default function VideoTable({ videos }: { videos: Video[] }) {
   const router = useRouter();
 
-  const [search,         setSearch]         = useState("");
-  const [debouncedSearch,setDebouncedSearch] = useState("");
-  const [sortKey,        setSortKey]         = useState<SortKey>("views");
-  const [sortDir,        setSortDir]         = useState<SortDir>("desc");
-  const [page,           setPage]            = useState(1);
+  const [search,          setSearch]          = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortKey,         setSortKey]         = useState<SortKey>("views");
+  const [sortDir,         setSortDir]         = useState<SortDir>("desc");
+  const [page,            setPage]            = useState(1);
 
   // Debounce — 300ms
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
     return () => clearTimeout(t);
   }, [search]);
 
-  // Filter by title
+  // Filter
   const filtered = useMemo(() =>
     videos.filter((v) =>
       v.title.toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -49,7 +49,9 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       if (sortKey === "publishedAt") {
-        const diff = new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+        const diff =
+          new Date(a.publishedAt).getTime() -
+          new Date(b.publishedAt).getTime();
         return sortDir === "desc" ? -diff : diff;
       }
       const diff = (a[sortKey] as number) - (b[sortKey] as number);
@@ -76,10 +78,10 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
     return (
       <button
         onClick={() => toggleSort(colKey)}
-        className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:text-black transition-colors"
+        className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors"
       >
         {label}
-        <span className={active ? "text-black" : "text-gray-300"}>
+        <span className={active ? "text-foreground" : "text-gray-300 dark:text-gray-700"}>
           {active && sortDir === "asc" ? "↑" : "↓"}
         </span>
       </button>
@@ -94,16 +96,16 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
         placeholder="Search by title..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full md:w-72 px-3 py-2 text-sm border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-black"
+        className="w-full md:w-72 px-3 py-2 text-sm border rounded-lg mb-4 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white dark:border-gray-700"
       />
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-x-auto rounded-xl border dark:border-gray-800">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-800">
             <tr>
               <th className="px-4 py-3 w-20" />
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Title
               </th>
               <th className="px-4 py-3 text-right">
@@ -131,7 +133,10 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-gray-400 text-sm">
+                <td
+                  colSpan={6}
+                  className="px-4 py-12 text-center text-muted-foreground text-sm"
+                >
                   {debouncedSearch
                     ? `No videos match "${debouncedSearch}"`
                     : "No videos found. Click Refresh to sync."}
@@ -141,10 +146,14 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
               paginated.map((video, i) => (
                 <tr
                   key={video.id}
-                  onClick={() => router.push(`/dashboard/video/${video.videoId}`)}
+                  onClick={() =>
+                    router.push(`/dashboard/video/${video.videoId}`)
+                  }
                   className={`
-                    cursor-pointer hover:bg-gray-50 transition-colors
-                    ${i < paginated.length - 1 ? "border-b" : ""}
+                    cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors
+                    ${i < paginated.length - 1
+                      ? "border-b dark:border-gray-800"
+                      : ""}
                   `}
                 >
                   {/* Thumbnail */}
@@ -160,28 +169,28 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
 
                   {/* Title */}
                   <td className="px-4 py-3 max-w-xs">
-                    <p className="font-medium text-gray-900 line-clamp-2 leading-snug">
+                    <p className="font-medium text-foreground line-clamp-2 leading-snug">
                       {video.title}
                     </p>
                   </td>
 
                   {/* Views */}
-                  <td className="px-4 py-3 text-right text-gray-600 tabular-nums">
+                  <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                     {video.views.toLocaleString("en-US")}
                   </td>
 
                   {/* Likes */}
-                  <td className="px-4 py-3 text-right text-gray-600 tabular-nums">
+                  <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                     {video.likes.toLocaleString("en-US")}
                   </td>
 
                   {/* Comments */}
-                  <td className="px-4 py-3 text-right text-gray-600 tabular-nums">
+                  <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
                     {video.comments.toLocaleString("en-US")}
                   </td>
 
                   {/* Published */}
-                  <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">
+                  <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
                     {new Date(video.publishedAt).toLocaleDateString("en-US", {
                       month: "short",
                       day:   "numeric",
@@ -198,7 +207,7 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 flex-wrap gap-2">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {filtered.length} video{filtered.length !== 1 ? "s" : ""}
             {debouncedSearch ? ` matching "${debouncedSearch}"` : ""}
           </p>
@@ -206,7 +215,7 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1.5 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm border dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Prev
             </button>
@@ -216,8 +225,8 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
                 onClick={() => setPage(p)}
                 className={`px-3 py-1.5 text-sm border rounded-md transition-colors
                   ${page === p
-                    ? "bg-black text-white border-black"
-                    : "hover:bg-gray-50"
+                    ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
+                    : "dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 text-foreground"
                   }`}
               >
                 {p}
@@ -226,7 +235,7 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-1.5 text-sm border rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm border dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>
