@@ -40,6 +40,16 @@ export default async function LandingPage() {
         >
           Sign in with Google — it&apos;s free
         </Link>
+        <div className="mt-3 flex items-center justify-center gap-4">
+          <Link
+            href="/demo"
+            className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white underline underline-offset-4 transition-colors"
+          >
+            View live demo
+          </Link>
+          <span className="text-gray-300 dark:text-gray-700">·</span>
+          <p className="text-xs text-gray-400">No credit card. Read-only access.</p>
+        </div>
         <p className="text-xs text-gray-400 mt-3">
           No credit card. Read-only access to your channel.
         </p>
@@ -270,6 +280,12 @@ export default async function LandingPage() {
             className="inline-block px-8 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
           >
             Get started — it&apos;s free
+          </Link>
+          <Link
+            href="/demo"
+            className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white underline underline-offset-4 transition-colors"
+          >
+            View live demo first
           </Link>
         </div>
       </section>

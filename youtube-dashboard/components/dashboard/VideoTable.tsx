@@ -19,7 +19,13 @@ type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 10;
 
-export default function VideoTable({ videos }: { videos: Video[] }) {
+export default function VideoTable({
+  videos,
+  showThumbnails = true,
+}: {
+  videos:          Video[];
+  showThumbnails?: boolean;
+}) {
   const router = useRouter();
 
   const [search,          setSearch]          = useState("");
@@ -104,7 +110,7 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-800">
             <tr>
-              <th className="px-4 py-3 w-20" />
+              {showThumbnails && <th className="px-4 py-3 w-20" />}
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Title
               </th>
@@ -134,7 +140,7 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
             {paginated.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={showThumbnails ? 6 : 5}
                   className="px-4 py-12 text-center text-muted-foreground text-sm"
                 >
                   {debouncedSearch
@@ -156,16 +162,18 @@ export default function VideoTable({ videos }: { videos: Video[] }) {
                       : ""}
                   `}
                 >
-                  {/* Thumbnail */}
-                  <td className="px-4 py-3">
-                    <Image
-                      src={`https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`}
-                      alt={video.title}
-                      width={80}
-                      height={45}
-                      className="rounded object-cover"
-                    />
-                  </td>
+                  {/* Thumbnail — only on real dashboard */}
+                  {showThumbnails && (
+                    <td className="px-4 py-3">
+                      <Image
+                        src={`https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`}
+                        alt={video.title}
+                        width={80}
+                        height={45}
+                        className="rounded object-cover"
+                      />
+                    </td>
+                  )}
 
                   {/* Title */}
                   <td className="px-4 py-3 max-w-xs">
