@@ -1,4 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/config";
+
+export const metadata: Metadata = {
+  title:       "Privacy Policy",
+  description: "How YT Analytics handles your data and YouTube credentials.",
+  alternates:  { canonical: `${SITE_URL}/privacy` },
+};
 
 export default function PrivacyPage() {
   return (

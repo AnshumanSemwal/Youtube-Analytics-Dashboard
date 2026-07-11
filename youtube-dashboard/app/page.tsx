@@ -3,6 +3,19 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BarChart2, Shield, Filter } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import type { Metadata } from "next";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/config";
+
+export const metadata: Metadata = {
+  title:       "YouTube Analytics for Creators",
+  description: SITE_DESCRIPTION,
+  alternates:  { canonical: SITE_URL },
+  openGraph: {
+    title:       `${SITE_NAME} — YouTube Analytics for Creators`,
+    description: SITE_DESCRIPTION,
+    url:         SITE_URL,
+  },
+};
 
 export default async function LandingPage() {
   const session = await auth();

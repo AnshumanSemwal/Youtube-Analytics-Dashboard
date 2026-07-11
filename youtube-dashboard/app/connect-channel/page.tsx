@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title:  "Connect Channel",
+  robots: { index: false },
+};
 
 type ChannelData = {
   id: string;

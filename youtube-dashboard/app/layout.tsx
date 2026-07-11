@@ -1,35 +1,40 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/config";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "YouTube Analytics Dashboard",
-  description: "Analytics for YouTubers",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default:  `${SITE_NAME} — YouTube Analytics for Creators`,
+    template: `%s — ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type:        "website",
+    siteName:    SITE_NAME,
+    title:       `${SITE_NAME} — YouTube Analytics for Creators`,
+    description: SITE_DESCRIPTION,
+    url:         SITE_URL,
+  },
+  twitter: {
+    card:        "summary_large_image",
+    title:       `${SITE_NAME} — YouTube Analytics for Creators`,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geist.className} antialiased`}>
         <ThemeProvider>
           {children}
         </ThemeProvider>

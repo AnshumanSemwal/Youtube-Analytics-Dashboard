@@ -7,6 +7,19 @@ import WatchTimeChart from "@/components/dashboard/WatchTimeChart";
 import TopVideosChart from "@/components/dashboard/TopVideosChart";
 import VideoTable from "@/components/dashboard/VideoTable";
 import { MOCK_CHANNEL, MOCK_VIDEOS, getMockMetrics } from "@/lib/mock-data";
+import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/config";
+
+export const metadata: Metadata = {
+  title:       "Live Demo",
+  description: "See YouTube Analytics Dashboard in action with sample K-drama channel data. No sign-in required.",
+  alternates:  { canonical: `${SITE_URL}/demo` },
+  openGraph: {
+    title:       "Live Demo — YT Analytics",
+    description: "See the dashboard in action with sample data. No sign-in required.",
+    url:         `${SITE_URL}/demo`,
+  },
+};
 
 export default async function DemoPage({
   searchParams,

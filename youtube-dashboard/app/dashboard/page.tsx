@@ -12,6 +12,12 @@ import TopVideosChart from "@/components/dashboard/TopVideosChart";
 import VideoTable from "@/components/dashboard/VideoTable";
 import RefreshButton from "@/components/RefreshButton";
 import LastSynced from "@/components/LastSynced";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title:  "Dashboard",
+  robots: { index: false },
+};
 
 function fmtDate(date: Date): string {
   return new Date(date).toLocaleDateString("en-US", {
