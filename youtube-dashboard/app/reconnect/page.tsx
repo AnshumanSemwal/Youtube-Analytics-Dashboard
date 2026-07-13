@@ -1,12 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title:  "Reconnect Account",
-  robots: { index: false },
-};
 
 export default function ReconnectPage() {
   return (
