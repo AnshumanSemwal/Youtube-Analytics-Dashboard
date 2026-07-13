@@ -18,10 +18,11 @@ export async function withCache<T>(
     try {
       const cached = await redis.get<T>(key);
       if (cached !== null) {
-        console.log(`Cache HIT: ${key}`);
+        console.log(`Cache HIT: ${key.split(":")[0]}`);
         return cached;
       }
-      console.log(`Cache MISS: ${key}`);
+    
+      console.log(`Cache MISS: ${key.split(":")[0]}`);
     } catch (error) {
       console.error("Redis error:", error);
       // Redis failed — fall through to fetch directly
