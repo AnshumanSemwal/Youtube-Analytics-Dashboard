@@ -50,10 +50,10 @@ export default function PrivacyPage() {
             For questions or data deletion requests, contact us at{" "}
             
             <a
-              href="mailto:hello@yourdomain.com"
+              href="mailto:anshumansemwal3@gmail.com"
               className="underline hover:text-gray-900 dark:hover:text-white"
             >
-              hello@yourdomain.com
+              anshumansemwal3@gmail.com
             </a>
             .
             </p>

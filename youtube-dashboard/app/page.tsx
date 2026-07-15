@@ -321,10 +321,10 @@ export default async function LandingPage() {
               Privacy Policy
             </Link>
             <a
-              href="mailto:hello@yourdomain.com"
+              href="mailto:anshumansemwal3@gmail.com"
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               >
-              hello@yourdomain.com 
+              anshumansemwal3@gmail.com 
               </a>
           </div>
         </div>
